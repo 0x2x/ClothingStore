@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 import org.yearup.data.CategoryDao;
 import org.yearup.models.Category;
 import org.yearup.models.Product;
+import org.yearup.models.User;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -25,8 +26,25 @@ public class MySqlCategoryDao extends MySqlDaoBase implements CategoryDao
     public List<Category> getAllCategories()
     {
         // get all categories
-        String SQL = "SELECT * FROM categories;";
-        return null;
+        String sql = "SELECT * FROM categories;";
+        List<Category> categories = new ArrayList<>();
+        try (Connection connection = getConnection())
+        {
+            PreparedStatement statement = connection.prepareStatement(sql);
+            ResultSet row = statement.executeQuery();
+
+            while (row.next())
+            {
+                Category category = mapRow(row);
+                categories.add(category);
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        return categories;
     }
 
     @Override
