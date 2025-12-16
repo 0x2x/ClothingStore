@@ -9,6 +9,7 @@ import org.yearup.data.ShoppingCartDao;
 import org.yearup.data.UserDao;
 import org.yearup.models.Product;
 import org.yearup.models.ShoppingCart;
+import org.yearup.models.ShoppingCartItem;
 import org.yearup.models.User;
 
 import java.security.Principal;
@@ -25,8 +26,6 @@ public class ShoppingCartController
     private ShoppingCartDao shoppingCartDao;
     private UserDao userDao;
     private ProductDao productDao;
-
-
 
     // each method in this controller requires a Principal object as a parameter
     public ShoppingCart getCart(Principal principal)
@@ -50,16 +49,23 @@ public class ShoppingCartController
 
     // add a POST method to add a product to the cart - the url should be
     // https://localhost:8080/cart/products/15 (15 is the productId to be added)
+    @PostMapping("/products/{id}")
+    public void addProduct(@PathVariable int id, @RequestBody User user) {
+        shoppingCartDao.addItem(user.getId(), id);
+    }
 
 
     // add a PUT method to update an existing product in the cart - the url should be
     // https://localhost:8080/cart/products/15 (15 is the productId to be updated)
     // the BODY should be a ShoppingCartItem - quantity is the only value that will be updated
-
+    @PutMapping("/products/{id}")
+    public void updateCart(@PathVariable int id, @RequestBody ShoppingCartItem cartItem) {
+        shoppingCartDao.updateCart(id, cartItem);
+    }
 
     // add a DELETE method to clear all products from the current users cart
     // https://localhost:8080/cart
-    @DeleteMapping("/cart")
+    @DeleteMapping()
     public void deleteCart(@RequestBody User userBody) {
         shoppingCartDao.deleteCart(userBody.getId());
     }

@@ -20,6 +20,8 @@ import java.util.List;
 @CrossOrigin
 public class CategoriesController
 {
+    // create an Autowired controller to inject the categoryDao and ProductDao
+
     private CategoryDao categoryDao;
     private ProductDao productDao;
 
@@ -29,10 +31,9 @@ public class CategoriesController
         this.productDao = productDao;
     }
 
-    // create an Autowired controller to inject the categoryDao and ProductDao
 
     // add the appropriate annotation for a get action
-    @GetMapping("/all")
+    @GetMapping()
     public List<Category> getAll()
     {
         // find and return all categories
@@ -40,7 +41,7 @@ public class CategoriesController
     }
 
     // add the appropriate annotation for a get action
-    @GetMapping
+    @GetMapping("/{id}")
     public Category getById(@PathVariable int id)
     {
         // get the category by id
@@ -73,15 +74,17 @@ public class CategoriesController
     public void updateCategory(@PathVariable int id, @RequestBody Category category)
     {
         // update the category by id
+        categoryDao.update(id, category);
     }
 
 
     // add annotation to call this method for a DELETE action - the url path must include the categoryId
     // add annotation to ensure that only an ADMIN can call this function
-    @DeleteMapping("/delete/category")
+    @DeleteMapping("{id}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void deleteCategory(@PathVariable int id)
     {
         // delete the category by id
+        categoryDao.delete(id);
     }
 }
