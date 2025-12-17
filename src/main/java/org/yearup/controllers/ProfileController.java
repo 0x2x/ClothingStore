@@ -5,7 +5,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.yearup.data.ProfileDao;
 import org.yearup.data.UserDao;
+import org.yearup.models.Profile;
 import org.yearup.models.User;
+
+import java.security.Principal;
 
 @RestController
 @RequestMapping("profile")
@@ -23,20 +26,21 @@ public class ProfileController {
 
     // get Profile
     @GetMapping() // if for a specfic user use ?username= or ?id=
-    public User getProfile(@RequestHeader("authorization") String token, @RequestParam(required = false) String username) {
+    public Profile getProfile(Principal principal, @RequestParam(required = false) String username) {
         if(!username.isEmpty()) {
-//            return profileDao.getByUserName(username);
+            return profileDao.getUserByUsername(username);
         }
-        return new User();
-//        return profileDao.getUserById(Integer.parseInt(id));
+        return getProfileByPrincipal(principal);
     }
-
 
     // edit Profile
     @PutMapping()
-    public User editProfile(@RequestHeader("authorization") String token) {
-        return new User();
+    public Profile editProfile(Principal principal, @RequestBody Profile profile) {
+        return profileDao.edit(profile);
     }
 
-    //
+    private Profile getProfileByPrincipal(Principal principal) {
+        String username = principal.getName();
+        return profileDao.getUserByUsername(username);
+    }
 }

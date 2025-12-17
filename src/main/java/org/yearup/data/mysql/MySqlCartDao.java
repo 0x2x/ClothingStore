@@ -77,6 +77,7 @@ public class MySqlCartDao extends MySqlDaoBase implements ShoppingCartDao {
             ResultSet row = statement.executeQuery();
 
             if(row.next()) {
+                return mapRowItem(row);
             }
 
         }
@@ -90,17 +91,36 @@ public class MySqlCartDao extends MySqlDaoBase implements ShoppingCartDao {
     @Override
     public int addItem(int userId, int productId) {
         // quantity is 0;
+        String checkIfExists = "SELECT user_id, product_id, quantity FROM shopping_cart WHERE user_id = ? AND product_id = ?";
         String sql = "INSERT INTO shopping_cart(user_id, product_id, quantity) VALUES (?,?,?);";
+        String updateQuantity = "UPDATE shopping_cart SET quantity = quantity + 1 WHERE user_id = ? AND product_id = ?";
         try(Connection connection = getConnection())
         {
-            PreparedStatement ps = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
-            ps.setInt(1, userId);
-            ps.setInt(2, productId);
-            ps.setInt(3, 0);
+            try(PreparedStatement checkStmt = connection.prepareStatement(checkIfExists)) { // if item exists
+                checkStmt.setInt(1, userId);
+                checkStmt.setInt(2, productId);
 
-            ps.executeUpdate();
+                ResultSet rs = checkStmt.executeQuery();
+                if(rs.next()) { // update item
+                    try(PreparedStatement updateStmt = connection.prepareStatement(updateQuantity)) {
+                        updateStmt.setInt(1, userId);
+                        updateStmt.setInt(2, productId);
+                        return updateStmt.executeUpdate(); // update query
+                    }
+                }
+            }
+            try (PreparedStatement insertStmt = connection.prepareStatement(sql)) {
+                insertStmt.setInt(1, userId);
+                insertStmt.setInt(2, productId);
+                insertStmt.executeUpdate();
 
-            return PreparedStatement.RETURN_GENERATED_KEYS;
+                ResultSet keys = insertStmt.getGeneratedKeys();
+                if(keys.next()) {
+                    return keys.getInt(1);
+                }
+            }
+
+            return 0;
         }
         catch (SQLException e)
         {
@@ -130,14 +150,12 @@ public class MySqlCartDao extends MySqlDaoBase implements ShoppingCartDao {
 
     @Override
     public void updateCart(int productId, ShoppingCartItem cartItem) {
-        String sql = "UPDATE categories SET category_id = ?, name = ?, description = ? WHERE category_id = ?";
+        String sql = "UPDATE categories SET quantity = ? WHERE category_id = ?";
         try(Connection connection = getConnection())
         {
             PreparedStatement ps = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
-            ps.setInt(1, productId);
-            ps.setString(2, cartItem.getProduct().getName());
-            ps.setString(3, cartItem.getProduct().getDescription());
-
+            ps.setInt(1, cartItem.getQuantity());
+            ps.setInt(2, cartItem.getProductId());
             ps.executeUpdate();
         }
         catch (SQLException e)
@@ -154,6 +172,10 @@ public class MySqlCartDao extends MySqlDaoBase implements ShoppingCartDao {
         ShoppingCart shoppingCart = new ShoppingCart();
         return shoppingCart;
     }
-
+    private ShoppingCartItem mapRowItem(ResultSet resultSet) throws SQLException {
+        ShoppingCartItem item = new ShoppingCartItem();
+        int userId = resultSet.getInt("user_id");
+        return item;
+    }
 
 }
