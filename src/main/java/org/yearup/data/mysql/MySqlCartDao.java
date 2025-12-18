@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 @Component
 public class MySqlCartDao extends MySqlDaoBase implements ShoppingCartDao {
@@ -21,7 +22,25 @@ public class MySqlCartDao extends MySqlDaoBase implements ShoppingCartDao {
 
     @Override
     public ShoppingCart getByUserId(int userId) {
-        String sql = "SELECT * FROM shopping_cart WHERE user_id = ?;";
+        String sql = """
+                SELECT 
+                   sc.user_id, 
+                   sc.product_id, 
+                   p.name, 
+                   p.price, 
+                   p.category_id, 
+                   p.description, 
+                   p.subcategory, 
+                   p.image_url,
+                   p.stock,
+                   p.featured 
+                FROM shopping_cart sc 
+                INNER JOIN products p 
+                    ON sc.product_id = p.product_id
+                WHERE sc.user_id = ?;
+                """;
+        ShoppingCart shoppingCart = new ShoppingCart();
+
         try (Connection connection = getConnection())
         {
             PreparedStatement statement = connection.prepareStatement(sql);
@@ -29,46 +48,45 @@ public class MySqlCartDao extends MySqlDaoBase implements ShoppingCartDao {
 
             ResultSet row = statement.executeQuery();
 
-            if(row.next()) {
-                return mapRow(row);
-            }
-
+           while (row.next()) {
+               ShoppingCartItem product = mapRowItem(row);
+               shoppingCart.add(product);
+           }
         }
         catch (SQLException e)
         {
             throw new RuntimeException(e);
         }
-        return new ShoppingCart();
+        return shoppingCart;
     }
 
     @Override
-    public ShoppingCart deleteCart(int userId) {
+    public boolean deleteCart(int userId) {
         String sql = "DELETE FROM shopping_cart WHERE user_id = ?;";
         try (Connection connection = getConnection())
         {
             PreparedStatement statement = connection.prepareStatement(sql);
             statement.setInt(1, userId);
 
-            ResultSet row = statement.executeQuery();
+            int rowUpdated = statement.executeUpdate();
 
-            if(row.next()) {
-                return mapRow(row);
-            }
+            return rowUpdated > 0;
 
         }
         catch (SQLException e)
         {
             throw new RuntimeException(e);
         }
-        return null;
     }
 
     @Override
     public ShoppingCartItem getByProductId(int productId) {
-        String sql = "SELECT c.product_id, products.name, products.price FROM shopping_cart AS c\n" +
-                "INNER JOIN products\n" +
-                "ON c.product_id = products.product_id\n" +
-                "WHERE c.product_id = 10;";
+        String sql = """ 
+                SELECT c.product_id, products.name, products.price FROM shopping_cart AS c
+                INNER JOIN products
+                ON c.product_id = products.product_id
+                WHERE c.product_id = ?;
+        """;
         try (Connection connection = getConnection())
         {
             PreparedStatement statement = connection.prepareStatement(sql);
@@ -109,9 +127,11 @@ public class MySqlCartDao extends MySqlDaoBase implements ShoppingCartDao {
                     }
                 }
             }
-            try (PreparedStatement insertStmt = connection.prepareStatement(sql)) {
+            try (PreparedStatement insertStmt = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
                 insertStmt.setInt(1, userId);
                 insertStmt.setInt(2, productId);
+                insertStmt.setInt(3, 1);
+
                 insertStmt.executeUpdate();
 
                 ResultSet keys = insertStmt.getGeneratedKeys();
@@ -164,17 +184,22 @@ public class MySqlCartDao extends MySqlDaoBase implements ShoppingCartDao {
         }
     }
 
-    private ShoppingCart mapRow(ResultSet resultSet) throws SQLException {
-        int user_id = resultSet.getInt("user_id");
-        int product_id = resultSet.getInt("product_id");
-        int quantity = resultSet.getInt("quantity");
 
-        ShoppingCart shoppingCart = new ShoppingCart();
-        return shoppingCart;
-    }
     private ShoppingCartItem mapRowItem(ResultSet resultSet) throws SQLException {
         ShoppingCartItem item = new ShoppingCartItem();
-        int userId = resultSet.getInt("user_id");
+        Product product = new Product();
+
+        product.setProductId(resultSet.getInt("product_id"));
+        product.setName(resultSet.getString("name"));
+        product.setPrice(resultSet.getBigDecimal("price"));
+        product.setCategoryId(resultSet.getInt("category_id"));
+        product.setDescription(resultSet.getString("description"));
+        product.setSubCategory(resultSet.getString("subcategory"));
+        product.setImageUrl(resultSet.getString("image_url"));
+        product.setStock(resultSet.getInt("stock"));
+        product.setFeatured(resultSet.getBoolean("featured"));
+        item.setProduct(product);
+
         return item;
     }
 

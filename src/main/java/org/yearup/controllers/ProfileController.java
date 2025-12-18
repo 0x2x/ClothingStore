@@ -27,7 +27,7 @@ public class ProfileController {
     // get Profile
     @GetMapping() // if for a specfic user use ?username= or ?id=
     public Profile getProfile(Principal principal, @RequestParam(required = false) String username) {
-        if(!username.isEmpty()) {
+        if(username != null && !username.isBlank()) {
             return profileDao.getUserByUsername(username);
         }
         return getProfileByPrincipal(principal);
@@ -36,6 +36,8 @@ public class ProfileController {
     // edit Profile
     @PutMapping()
     public Profile editProfile(Principal principal, @RequestBody Profile profile) {
+        Profile profile1 = getProfileByPrincipal(principal);
+        profile.setUserId(profile1.getUserId());
         return profileDao.edit(profile);
     }
 

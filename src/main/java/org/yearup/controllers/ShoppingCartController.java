@@ -14,6 +14,7 @@ import org.yearup.models.ShoppingCartItem;
 import org.yearup.models.User;
 
 import java.security.Principal;
+import java.util.ArrayList;
 
 // convert this class to a REST controller
 // only logged in users should have access to these actions
@@ -46,6 +47,7 @@ public class ShoppingCartController
         }
         catch(Exception e)
         {
+            System.out.println(e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Oops... our bad.");
         }
     }
