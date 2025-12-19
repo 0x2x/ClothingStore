@@ -32,6 +32,7 @@ public class CategoriesController
     }
 
     // add the appropriate annotation for a get action
+    // http://localhost:80880/categories/
     @GetMapping()
     public List<Category> getAll()
     {
@@ -40,6 +41,7 @@ public class CategoriesController
     }
 
     // add the appropriate annotation for a get action
+    // http://localhost:80880/categories/1
     @GetMapping("/{id}")
     public Category getById(@PathVariable int id)
     {
@@ -58,7 +60,8 @@ public class CategoriesController
 
     // add annotation to call this method for a POST action
     // add annotation to ensure that only an ADMIN can call this function
-    @PostMapping("")
+    // http://localhost:8080/categories (admin)
+    @PostMapping()
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public Category addCategory(@RequestBody Category category)
     {
