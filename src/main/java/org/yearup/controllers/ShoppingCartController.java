@@ -72,9 +72,18 @@ public class ShoppingCartController
     // add a DELETE method to clear all products from the current users cart
     // https://localhost:8080/cart
     @DeleteMapping()
-    public void deleteCart(Principal principal) {
+    public boolean deleteCart(Principal principal) {
         int userId = getUserId(principal);
         shoppingCartDao.deleteCart(userId);
+        return true;
+    }
+
+    // pay for items
+    // https://localhost:8080/cart
+    @PostMapping()
+    public void purchaseCart(Principal principal) {
+        int userId = getUserId(principal);
+        shoppingCartDao.purchaseCart(userId);
     }
 
 

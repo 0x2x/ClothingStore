@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 @Component
@@ -177,6 +178,58 @@ public class MySqlCartDao extends MySqlDaoBase implements ShoppingCartDao {
             ps.setInt(1, cartItem.getQuantity());
             ps.setInt(2, cartItem.getProductId());
             ps.executeUpdate();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void purchaseCart(int userId) {
+        String profile = "SELECT address, city, state, zip FROM profiles WHERE user_id = ?";
+        String deleteItems = "DELETE FROM shopping_cart WHERE user_id = ?";
+        String insertOrder = "INSERT INTO orders(order_id, user_id, date, address, city, state, zip, shipping_amount) VALUES (?,?,?,?,?,?,?,?);";
+        int orderId = (int) Math.round(Math.random() * 10000);
+        LocalDateTime localDateTime = LocalDateTime.now();
+        String date = localDateTime.toString();
+
+        try(Connection connection = getConnection())
+        {
+            try(PreparedStatement checkStmt = connection.prepareStatement(profile)) { // if item exists
+                checkStmt.setInt(1, userId);
+
+                ResultSet rs = checkStmt.executeQuery();
+                if(!rs.next()) {
+                    throw new RuntimeException("User does not exist");
+                }
+                String address = rs.getString("address");
+                String city = rs.getString("city");
+                String state = rs.getString("state");
+                int zip = rs.getInt("zip");
+                try (PreparedStatement insertStmt = connection.prepareStatement(insertOrder, PreparedStatement.RETURN_GENERATED_KEYS)) { // insert order
+                    insertStmt.setInt(1, orderId);
+                    insertStmt.setInt(2, userId);
+                    insertStmt.setString(3, date);
+                    insertStmt.setString(4, address);
+                    insertStmt.setString(5, city);
+                    insertStmt.setString(6, state);
+                    insertStmt.setInt(7, zip);
+                    insertStmt.setInt(8, 15);
+                    insertStmt.executeUpdate();
+
+                }
+
+                try (PreparedStatement statement = connection.prepareStatement(deleteItems))
+                {
+                    statement.setInt(1, userId);
+                    statement.executeUpdate();
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
         }
         catch (SQLException e)
         {

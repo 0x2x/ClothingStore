@@ -5,7 +5,6 @@
 
 The **eCommerce Store – Clothing Store** is a backend application built with **Spring Boot** that provides RESTful APIs for managing a clothing-based eCommerce platform. The project focuses on authentication, authorization, and core store functionality, including **user login** and **admin login** using direct APIs.
 
-This project is designed to support frontend applications (web or mobile) by exposing secure and scalable APIs.
 
 ---
 
@@ -14,10 +13,60 @@ This project is designed to support frontend applications (web or mobile) by exp
 * **Java**
 * **Spring Boot**
 * **Spring Web (REST APIs)**
-* **Spring Security** (authentication & authorization)
-* **JPA / Hibernate**
 * **Database**: MySQL
 
+---
+## 💻 Interesting Piece of code
+```java
+    @Override
+    public void purchaseCart(int userId) {
+        String profile = "SELECT address, city, state, zip FROM profiles WHERE user_id = ?";
+        String deleteItems = "DELETE FROM shopping_cart WHERE user_id = ?";
+        String insertOrder = "INSERT INTO orders(order_id, user_id, date, address, city, state, zip, shipping_amount) VALUES (?,?,?,?,?,?,?,?);";
+        int orderId = (int) Math.round(Math.random() * 10000);
+        LocalDateTime localDateTime = LocalDateTime.now();
+        String date = localDateTime.toString();
+
+        try(Connection connection = getConnection())
+        {
+            try(PreparedStatement checkStmt = connection.prepareStatement(profile)) { // if item exists
+                checkStmt.setInt(1, userId);
+
+                ResultSet rs = checkStmt.executeQuery();
+                String address = rs.getString("address");
+                String city = rs.getString("city");
+                String state = rs.getString("state");
+                int zip = rs.getInt("zip");
+                try (PreparedStatement insertStmt = connection.prepareStatement(insertOrder, PreparedStatement.RETURN_GENERATED_KEYS)) { // insert order
+                    insertStmt.setInt(1, orderId);
+                    insertStmt.setInt(2, userId);
+                    insertStmt.setString(3, date);
+                    insertStmt.setString(4, address);
+                    insertStmt.setString(5, city);
+                    insertStmt.setString(6, state);
+                    insertStmt.setInt(7, zip);
+                    insertStmt.setInt(8, 15);
+                    insertStmt.executeUpdate();
+
+                }
+
+                try (PreparedStatement statement = connection.prepareStatement(deleteItems))
+                {
+                    statement.setInt(1, userId);
+                    statement.executeUpdate();
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+```
 ---
 
 ## ✨ Features
@@ -36,7 +85,7 @@ This project is designed to support frontend applications (web or mobile) by exp
 ### User Login
 
 ```http
-POST /api/login
+POST /login
 ```
 
 **Request Body:**
@@ -53,7 +102,7 @@ POST /api/login
 ### Admin Login
 
 ```http
-POST /api/login
+POST /login
 ```
 
 **Request Body:**
@@ -146,10 +195,6 @@ Backend Developer | Spring Boot
 
 ---
 
-
-# Sending Requests
 ## Using authenitcated requests
 Using authenitcated requests while not being an admin returns an error:
 ![img.png](img.png)
-
-## Using non-authenticated requests
